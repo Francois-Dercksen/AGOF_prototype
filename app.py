@@ -8,7 +8,7 @@ app = Flask(__name__)
 # --- Hardcoded config (only the API key lives in Render's env vars) ---
 ALLOWED_ORIGIN = "*"  # tighten this to your Cloudflare Pages URL once you have it, e.g. "https://your-project.pages.dev"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL = "qwen/qwen3-coder:free"
+OPENROUTER_MODEL = "qwen/qwen3-30b-a3b:free"
 
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGIN}})
 
