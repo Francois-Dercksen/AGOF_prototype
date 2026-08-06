@@ -5,12 +5,15 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "*")
+# --- Hardcoded config (only the API key lives in Render's env vars) ---
+ALLOWED_ORIGIN = "*"  # tighten this to your Cloudflare Pages URL once you have it, e.g. "https://your-project.pages.dev"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL = "qwen/qwen3-coder:free"
+
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGIN}})
 
+# Only this one comes from Render's environment settings
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
-OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "qwen/qwen3-coder:free")
 
 SYSTEM_PROMPT = (
     "You are a helpful AI assistant running on a Qwen model. "
