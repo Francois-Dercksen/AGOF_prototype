@@ -1,4 +1,4 @@
-const API_BASE = "https://YOUR-RENDER-SERVICE.onrender.com"; // replace with your actual Render URL after first deploy
+const API_BASE = "https://agof-prototype.onrender.com"; // replace with your actual Render URL after first deploy
 
 const chatWindow = document.getElementById("chat-window");
 const input = document.getElementById("user-input");
