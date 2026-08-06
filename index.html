@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Qwen Chat MVP</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Qwen Chat MVP</h1>
+    <span id="model-label">connecting…</span>
+  </header>
+  <div id="chat-window">
+    <div class="msg system">Chatting with a Qwen model via OpenRouter. This backend can later be swapped for a locally-hosted Qwen server with no frontend changes.</div>
+  </div>
+  <div id="input-bar">
+    <textarea id="user-input" placeholder="Type a message…" rows="1"></textarea>
+    <button id="send-btn">Send</button>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
