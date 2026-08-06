@@ -20,11 +20,15 @@ function scrollToBottom() {
 }
 
 function renderMarkdown(el, text) {
-  if (window.marked) {
-    el.innerHTML = marked.parse(text);
-  } else {
-    el.textContent = text;
+  try {
+    if (window.marked) {
+      el.innerHTML = marked.parse(text);
+      return;
+    }
+  } catch (e) {
+    console.error("Markdown parse failed:", e);
   }
+  el.textContent = text;
 }
 
 function showTypingIndicator() {
@@ -71,7 +75,7 @@ async function sendMessage() {
       if (done) break;
       const chunkText = decoder.decode(value, { stream: true });
 
-      if (chunkText.startsWith("[ERROR]")) {
+      if (fullText === "" && chunkText.startsWith("[ERROR]")) {
         typingEl.remove();
         addMessage("ai", "Something went wrong. Please try again.");
         return;
@@ -83,7 +87,7 @@ async function sendMessage() {
       }
 
       fullText += chunkText;
-      aiEl.textContent = fullText;
+      renderMarkdown(aiEl, fullText);
       scrollToBottom();
     }
 
@@ -98,6 +102,7 @@ async function sendMessage() {
   } catch (err) {
     typingEl.remove();
     addMessage("ai", "Network error: could not reach the server.");
+    console.error(err);
   } finally {
     sendBtn.disabled = false;
   }
