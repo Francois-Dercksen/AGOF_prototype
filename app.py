@@ -1,29 +1,28 @@
 import os
+import json
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
 
 app = Flask(__name__)
 
-# --- Hardcoded config (only the API key lives in Render's env vars) ---
-ALLOWED_ORIGIN = "*"  # tighten this to your Cloudflare Pages URL once you have it, e.g. "https://your-project.pages.dev"
+ALLOWED_ORIGIN = "*"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "qwen/qwen3-30b-a3b"
 
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGIN}})
 
-# Only this one comes from Render's environment settings
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 SYSTEM_PROMPT = (
-    "You are a helpful AI assistant running on a Qwen model. "
-    "Keep answers concise and clear."
+    "You are the AGOF assistant, embodying 'Success by Principle'. "
+    "Keep answers concise, clear, and helpful."
 )
 
 
 @app.route("/api/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "model": OPENROUTER_MODEL})
+    return jsonify({"status": "ok"})
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -39,31 +38,44 @@ def chat():
 
     payload_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + user_messages
 
-    try:
-        resp = requests.post(
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": ALLOWED_ORIGIN,
-                "X-Title": "Qwen Chat MVP",
-            },
-            json={
-                "model": OPENROUTER_MODEL,
-                "messages": payload_messages,
-                "temperature": 0.7,
-            },
-            timeout=60,
-        )
-        resp.raise_for_status()
-        result = resp.json()
-        reply = result["choices"][0]["message"]["content"]
-        return jsonify({"reply": reply, "model": OPENROUTER_MODEL})
+    def generate():
+        try:
+            with requests.post(
+                f"{OPENROUTER_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": OPENROUTER_MODEL,
+                    "messages": payload_messages,
+                    "temperature": 0.7,
+                    "stream": True,
+                },
+                stream=True,
+                timeout=120,
+            ) as resp:
+                if resp.status_code != 200:
+                    yield f"[ERROR] {resp.text}"
+                    return
 
-    except requests.exceptions.HTTPError:
-        return jsonify({"error": "Upstream API error", "detail": resp.text}), 502
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+                for line in resp.iter_lines(decode_unicode=True):
+                    if not line or not line.startswith("data: "):
+                        continue
+                    payload = line[len("data: "):]
+                    if payload.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(payload)
+                        delta = chunk["choices"][0]["delta"].get("content", "")
+                        if delta:
+                            yield delta
+                    except Exception:
+                        continue
+        except Exception as e:
+            yield f"[ERROR] {str(e)}"
+
+    return Response(stream_with_context(generate()), mimetype="text/plain")
 
 
 if __name__ == "__main__":
