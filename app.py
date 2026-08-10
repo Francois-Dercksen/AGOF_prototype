@@ -55,6 +55,8 @@ def chat():
                 stream=True,
                 timeout=120,
             ) as resp:
+                resp.encoding = "utf-8"
+
                 if resp.status_code != 200:
                     yield f"[ERROR] {resp.text}"
                     return
@@ -75,7 +77,7 @@ def chat():
         except Exception as e:
             yield f"[ERROR] {str(e)}"
 
-    return Response(stream_with_context(generate()), mimetype="text/plain")
+    return Response(stream_with_context(generate()), mimetype="text/plain; charset=utf-8")
 
 
 if __name__ == "__main__":
