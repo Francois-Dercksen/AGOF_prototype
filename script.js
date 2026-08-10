@@ -23,12 +23,22 @@ function renderMarkdown(el, text) {
   try {
     if (window.marked) {
       el.innerHTML = marked.parse(text);
-      return;
+    } else {
+      el.textContent = text;
+    }
+    if (window.renderMathInElement) {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false },
+        ],
+        throwOnError: false,
+      });
     }
   } catch (e) {
-    console.error("Markdown parse failed:", e);
+    console.error("Render failed:", e);
+    el.textContent = text;
   }
-  el.textContent = text;
 }
 
 function showTypingIndicator() {
@@ -68,7 +78,7 @@ async function sendMessage() {
     }
 
     const reader = res.body.getReader();
-    const decoder = new TextDecoder();
+    const decoder = new TextDecoder("utf-8");
 
     while (true) {
       const { done, value } = await reader.read();
